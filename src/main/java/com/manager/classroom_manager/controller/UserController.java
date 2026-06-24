@@ -1,5 +1,6 @@
 package com.manager.classroom_manager.controller;
 
+import com.manager.classroom_manager.model.Result;
 import com.manager.classroom_manager.model.User;
 import com.manager.classroom_manager.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -17,104 +19,41 @@ public class UserController {
     @Autowired
     private UserService userService;
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest loginRequest) {
-        Map<String, Object> response = new HashMap<>();
-        
+    public Result<User> login(@RequestBody User user) {
         try {
-            if (loginRequest.getUsername() == null || loginRequest.getUsername().trim().isEmpty()) {
-                response.put("success", false);
-                response.put("message", "用户名不能为空");
-                return ResponseEntity.badRequest().body(response);
+            if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+                return Result.message(200, "用户名不能为空", null);
             }
             
-            if (loginRequest.getPassword() == null || loginRequest.getPassword().trim().isEmpty()) {
-                response.put("success", false);
-                response.put("message", "密码不能为空");
-                return ResponseEntity.badRequest().body(response);
+            if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+                return Result.message(200, "用户名不能为空", null);
             }
             
-            User user = userService.login(loginRequest.getUsername(), loginRequest.getPassword());
+            User user1 = userService.login(user.getUsername(), user.getPassword());
             
-            if (user != null) {
-                response.put("success", true);
-                response.put("message", "登录成功");
-                
-                Map<String, Object> userInfo = new HashMap<>();
-                userInfo.put("id", user.getId());
-                userInfo.put("username", user.getUsername());
-                userInfo.put("realName", user.getRealName());
-                userInfo.put("email", user.getEmail());
-                userInfo.put("phone", user.getPhone());
-                userInfo.put("role", user.getRole());
-                userInfo.put("avatarUrl", user.getAvatarUrl());
-                
-                response.put("data", userInfo);
-                return ResponseEntity.ok(response);
-            } else {
-                response.put("success", false);
-                response.put("message", "用户名或密码错误");
-                return ResponseEntity.status(401).body(response);
+            if (user1 == null) {
+                return Result.error("用户名或密码错误");
+            }
+            if (!user1.getStatus().equals(0)){
+                return Result.message(200, "账户状态异常，无法登录", null);
             }
             
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "登录失败: " + e.getMessage());
-            return ResponseEntity.status(500).body(response);
+            return Result.error("内部错误");
         }
+        return null;
     }
     
-    @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> getUserById(@PathVariable Integer id) {
-        Map<String, Object> response = new HashMap<>();
-        
-        try {
-            User user = userService.getUserById(id);
-            
-            if (user != null) {
-                response.put("success", true);
-                
-                Map<String, Object> userInfo = new HashMap<>();
-                userInfo.put("id", user.getId());
-                userInfo.put("username", user.getUsername());
-                userInfo.put("realName", user.getRealName());
-                userInfo.put("email", user.getEmail());
-                userInfo.put("phone", user.getPhone());
-                userInfo.put("role", user.getRole());
-                userInfo.put("avatarUrl", user.getAvatarUrl());
-                
-                response.put("data", userInfo);
-                return ResponseEntity.ok(response);
-            } else {
-                response.put("success", false);
-                response.put("message", "用户不存在");
-                return ResponseEntity.status(404).body(response);
-            }
-            
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "查询失败: " + e.getMessage());
-            return ResponseEntity.status(500).body(response);
+    @PostMapping("/add")
+    public Result<Boolean> addUser(@RequestBody User user){
+        if (userService.addUser(user)){
+            return Result.success(true);
         }
+        return Result.error("用户名不能重复");
     }
     
-    public static class LoginRequest {
-        private String username;
-        private String password;
-        
-        public String getUsername() {
-            return username;
-        }
-        
-        public void setUsername(String username) {
-            this.username = username;
-        }
-        
-        public String getPassword() {
-            return password;
-        }
-        
-        public void setPassword(String password) {
-            this.password = password;
-        }
+    @GetMapping("/all")
+    public Result<List<User>> getAllUsers(@RequestParam(defaultValue = "1") Integer pageNum, @RequestParam(defaultValue = "10") Integer pageSize){
+        return Result.success(userService.getAllUsers(pageNum, pageSize));
     }
 }
