@@ -22,11 +22,11 @@ public class UserController {
     public Result<User> login(@RequestBody User user) {
         try {
             if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
-                return Result.message(200, "用户名不能为空", null);
+                return Result.error("用户名不能为空");
             }
             
             if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
-                return Result.message(200, "用户名不能为空", null);
+                return Result.error("用户名不能为空");
             }
             
             User user1 = userService.login(user.getUsername(), user.getPassword());
@@ -35,7 +35,7 @@ public class UserController {
                 return Result.error("用户名或密码错误");
             }
             if (!user1.getStatus().equals(0)){
-                return Result.message(200, "账户状态异常，无法登录", null);
+                return Result.error("账户状态异常，无法登录");
             }
             
         } catch (Exception e) {
@@ -50,6 +50,22 @@ public class UserController {
             return Result.success(true);
         }
         return Result.error("用户名不能重复");
+    }
+    
+    @PostMapping("/delete")
+    public Result<Boolean> deleteUser(@RequestBody User user){
+        if (userService.getUserById(user.getId()) == null){
+            return Result.error("用户不存在");
+        }
+        return Result.success(userService.deleteUser(user.getId()));
+    }
+    
+    @PostMapping("/update")
+    public Result<Boolean> updateUser(@RequestBody User user){
+        if (userService.updateUser(user)){
+            return Result.success(true);
+        }
+        return Result.error("修改失败");
     }
     
     @GetMapping("/all")

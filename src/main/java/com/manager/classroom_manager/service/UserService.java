@@ -21,8 +21,16 @@ public class UserService {
         return null;
     }
     
+    public List<User> getAllUsers(Integer pageNum, Integer pageSize){
+        return userMapper.findAll(pageNum, pageSize);
+    }
+    
     public User getUserByName(String username){
         return userMapper.findByUsername(username);
+    }
+    
+    public User getUserById(Integer id){
+        return userMapper.findById(id);
     }
     public Boolean addUser(User user){
         if (userMapper.findByUsername(user.getUsername()) != null){
@@ -31,7 +39,20 @@ public class UserService {
         return userMapper.addUser(user) > 0;
     }
     
-    public List<User> getAllUsers(Integer pageNum, Integer pageSize){
-        return userMapper.findAll(pageNum, pageSize);
+    public Boolean deleteUser(Integer id){
+        return userMapper.deleteUser(id) > 0;
     }
+    
+    public Boolean updateUser(User user){
+        User user1 = userMapper.findById(user.getId());
+        if (user1 == null){
+            return false;
+        }
+        User user2 = userMapper.findByUsername(user.getUsername());
+        if (user2 == null || user2.getId() == user1.getId()){
+            return userMapper.updateUser(user) > 0;
+        }
+        return false;
+    }
+    
 }
